@@ -9,6 +9,11 @@ build:
 	$(CC) -shared luamacs.o -o luamacs.so -l:liblua.a
 	@rm luamacs.o
 
+.PHONY: check
+
+check:
+	$(CC) $(CFLAGS) -fsyntax-only src/main.c
+
 .PHONY: test
 
 test: build

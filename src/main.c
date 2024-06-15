@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <emacs-module.h>
 
@@ -9,8 +10,11 @@
 
 int plugin_is_GPL_compatible;
 
+// TODO: Make function get_string_length for elisp strings
+
 #define LOG(msg) printf("LUAMACS(%s): "msg"\n", __func__)
 #define NIL(env) env->intern(env, "nil")
+#define ELISP_IS_TYPE(env, type, str) env->eq(env, env->intern(env, str), type)
 
 static void
 lua_state_deinit(void *arg)
@@ -31,6 +35,168 @@ state_init(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
     luaL_openlibs(L);
     LOG("Lua state initialized");
     return env->make_user_ptr(env, lua_state_deinit, L);
+}
+
+emacs_value
+lua_to_emacs_val(emacs_env *env, lua_State *L, size_t stack_index)
+{
+    switch (lua_type(L, stack_index))
+    {
+        case LUA_TNIL:
+        {
+            return NIL(env);
+        }
+        case LUA_TNUMBER:
+        {
+            lua_Integer integer = lua_tointeger(L, stack_index);
+            lua_Number num = lua_tonumber(L, stack_index);
+            return integer != num ? env->make_float(env, num) : env->make_integer(env, integer);
+        }
+        case LUA_TBOOLEAN:
+        {
+            int boolean = lua_toboolean(L, stack_index);
+            return boolean ? env->intern(env, "t") : NIL(env);
+        }
+        case LUA_TSTRING:
+        {
+            const char *string = lua_tostring(L, stack_index);
+            return env->make_string(env, string, strlen(string));
+        }
+        // USER DATA
+        case LUA_TUSERDATA:
+        {
+            emacs_value val = lua_touserdata(L, stack_index);
+            return val;
+        }
+        case LUA_TTABLE:
+        {
+            // TODO
+            // Return nil for now
+        }
+        default:
+        {
+            LOG("Unknown type");
+            return NIL(env);
+        }
+    }
+}
+
+// Convert a emacs lisp value to lua and push it onto the stack
+int
+emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
+{
+    if (!env->is_not_nil(env, eval))
+    {
+        LOG("Return value from emacs is `nil`");
+        lua_pushnil(L);
+        return 0;
+    }
+
+    emacs_value type = env->type_of(env, eval);
+    if (ELISP_IS_TYPE(env, type, "string"))
+    {
+        LOG("Return value from emacs is `string`");
+        ptrdiff_t str_len = 0;
+        if (!env->copy_string_contents(env, eval, NULL, &str_len))
+        {
+            LOG("Failed to get string length");
+            return -1;
+        }
+
+        char *str = malloc(str_len);
+        if (!str)
+        {
+            LOG("Failed to allocate str");
+            return -1;
+        }
+
+        if (!env->copy_string_contents(env, eval, str, &str_len))
+        {
+            LOG("Failed to copy string");
+            return -1;
+        }
+
+        lua_pushstring(L, str);
+        free(str);
+    }
+    else if (ELISP_IS_TYPE(env, type, "integer"))
+    {
+        LOG("Return value from emacs is `integer`");
+        lua_pushinteger(L, env->extract_integer(env, eval));
+    }
+    else if (ELISP_IS_TYPE(env, type, "float"))
+    {
+        LOG("Return value from emacs is `float`");
+        lua_pushnumber(L, env->extract_float(env, eval));
+    }
+    else if (ELISP_IS_TYPE(env, type, "boolean"))
+    {
+        LOG("Return value from emacs is `boolean`");
+        // Redundant?
+        if (env->eq(env, eval, env->intern(env, "nil")))
+        {
+            lua_pushboolean(L, 0);
+        }
+        else
+        {
+            lua_pushboolean(L, 1);
+        }
+    }
+    else if (ELISP_IS_TYPE(env, type, "symbol"))
+    {
+        LOG("Return value from emacs is `symbol`");
+        emacs_value *l_udata = lua_newuserdata(L, sizeof(emacs_value));
+        memcpy(l_udata, eval, sizeof(emacs_value));
+        return 0;
+    }
+    else
+    {
+        LOG("Unsupported type");
+        return -1;
+    }
+
+    return 0;
+}
+
+// Lua function
+// Call emacs lisp function from lua
+int
+functioncall(lua_State *L)
+{
+    emacs_env *env = lua_touserdata(L, -4);
+    const char *func_name = lua_tostring(L, -3);
+    printf("LUAMACS: func name: %s\n", func_name);
+    size_t nargs = (size_t)lua_tonumber(L, -2);
+
+    if (nargs == 0)
+    {
+        // TODO: Make `ret` live longer
+        emacs_value ret = env->funcall(env, env->intern(env, func_name), 0, NULL);
+        emacs_to_lua_val(env, ret, L); // TODO: Check error
+        return 1;
+    }
+
+    emacs_value *evalues = malloc(sizeof(emacs_value) * nargs);
+    if (!evalues)
+    {
+        LOG("Failed to allocate evalues");
+        return 0;
+    }
+
+    for (size_t i = 0; i < nargs; i++)
+    {
+        lua_rawgeti(L, -1 - i, i + 1);
+        lua_to_emacs_val(env, L, -1);
+        evalues[i] = lua_to_emacs_val(env, L, -1);
+    }
+
+    // TODO: Make `ret` live longer
+    emacs_value ret = env->funcall(env, env->intern(env, func_name), nargs, evalues);
+    emacs_to_lua_val(env, ret, L); // TODO: Check error
+
+    free(evalues);
+
+    return 1;
 }
 
 static emacs_value
@@ -66,6 +232,14 @@ execute_lua_str(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
         LOG("Failed to copy lua code");
         return NIL(env);
     }
+
+    // Expose the emacs environment for use in Lua
+    lua_pushlightuserdata(L, env);
+    lua_setglobal(L, "emacs_environment");
+    lua_pop(L, -1);
+
+    lua_pushcfunction(L, functioncall);
+    lua_setglobal(L, "functioncall");
 
     if (luaL_dostring(L, lua_code))
     {
