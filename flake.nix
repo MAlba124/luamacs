@@ -15,16 +15,14 @@
             gcc
             emacs
           ];
-          buildInputs = with pkgs; [
-            lua
-          ];
+          buildInputs = with pkgs; [ lua ];
         in
-          with pkgs;
-          {
-            devShells.default = mkShell {
-              inherit buildInputs nativeBuildInputs;
-              LD_LIBRARY_PATH = lib.makeLibraryPath buildInputs;
-            };
-          }
+        with pkgs;
+        {
+          devShells.default = mkShell {
+            inherit buildInputs nativeBuildInputs;
+            LD_LIBRARY_PATH = lib.makeLibraryPath buildInputs;
+          };
+        }
       );
 }
