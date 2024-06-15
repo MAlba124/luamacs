@@ -170,7 +170,6 @@ functioncall(lua_State *L)
 
     if (nargs == 0)
     {
-        // TODO: Make `ret` live longer
         emacs_value ret = env->funcall(env, env->intern(env, func_name), 0, NULL);
         emacs_to_lua_val(env, ret, L); // TODO: Check error
         return 1;
@@ -190,7 +189,6 @@ functioncall(lua_State *L)
         evalues[i] = lua_to_emacs_val(env, L, -1);
     }
 
-    // TODO: Make `ret` live longer
     emacs_value ret = env->funcall(env, env->intern(env, func_name), nargs, evalues);
     emacs_to_lua_val(env, ret, L); // TODO: Check error
 
