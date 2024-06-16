@@ -1,13 +1,15 @@
-require "emacs.lua"
+require("emacs/emacs")
+local ui = require("emacs/ui")
 
-menu_bar_mode(Mode.DISABLE)
-scroll_bar_mode(Mode.DISABLE)
-tool_bar_mode(Mode.DISABLE)
+ui.menu_bar_mode(Mode.DISABLE)
+ui.scroll_bar_mode(Mode.DISABLE)
+ui.tool_bar_mode(Mode.DISABLE)
 
 set(intern("make-backup-files"), nil)
 
-require_theme(intern("modus-themes"))
-load_theme(intern("modus-operandi"))
+ui.require_theme(intern("modus-themes"))
+ui.load_theme(intern("modus-operandi"))
+ui.blink_cursor_mode(Mode.DISABLE)
 
 message(cons("Test", "asd")["car"]) -- prints `Test`
 

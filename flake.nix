@@ -14,6 +14,7 @@
             pkg-config
             gcc
             emacs
+            lua52Packages.ldoc
           ];
           buildInputs = with pkgs; [ lua ];
         in
