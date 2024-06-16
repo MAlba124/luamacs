@@ -10,3 +10,6 @@ require_theme(intern("modus-themes"))
 load_theme(intern("modus-operandi"))
 
 message(cons("Test", "asd")["car"]) -- prints `Test`
+
+cons_cell = cons("the-car", "the-cdr")
+set(intern("test-cons-value"), cons_cell["car"])

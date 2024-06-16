@@ -62,7 +62,6 @@ lua_to_emacs_val(emacs_env *env, lua_State *L, size_t stack_index)
             const char *string = lua_tostring(L, stack_index);
             return env->make_string(env, string, strlen(string));
         }
-        // USER DATA
         case LUA_TUSERDATA:
         {
             emacs_value val = lua_touserdata(L, stack_index);
@@ -70,8 +69,25 @@ lua_to_emacs_val(emacs_env *env, lua_State *L, size_t stack_index)
         }
         case LUA_TTABLE:
         {
-            // TODO
-            // Return nil for now
+            lua_getfield(L, -1, "type");
+            const char *type = lua_tostring(L, -1);
+
+            if (strcmp(type, "cons") == 0)
+            {
+                lua_getfield(L, -2, "car");
+                emacs_value car = lua_to_emacs_val(env, L, -1);
+
+                lua_getfield(L, -3, "cdr");
+                emacs_value cdr = lua_to_emacs_val(env, L, -1);
+
+                emacs_value args[] = { car, cdr };
+                return env->funcall(env, env->intern(env, "cons"), 2, args);
+            }
+            else
+            {
+                LOG("Unknown table type");
+                return NIL(env);
+            }
         }
         default:
         {
