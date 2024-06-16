@@ -45,5 +45,9 @@ function load_theme(theme)
 end
 
 function cons(car, cdr)
-   return functioncall(emacs_environment, "cons", 2, {car, cdr})
+   cell = {}
+   cell["type"] = "cons"
+   cell["car"] = car
+   cell["cdr"] = cdr
+   return cell
 end
