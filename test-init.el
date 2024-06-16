@@ -12,7 +12,5 @@
 (module-load"./luamacs.so")
 
 (let ((state (luamacs-state-init)))
-  (luamacs-exec-str state (luamacs-read-file-to-str "rc.lua"))
-    (message variable-for-testing)
-  nil)
+  (luamacs-exec-str state (luamacs-read-file-to-str "rc.lua")))
 

@@ -149,6 +149,26 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
         memcpy(l_udata, eval, sizeof(emacs_value));
         return 0;
     }
+    else if (ELISP_IS_TYPE(env, type, "cons"))
+    {
+        emacs_value args[] = { eval };
+        emacs_value car = env->funcall(env, env->intern(env, "car"), 1, args);
+        emacs_value cdr = env->funcall(env, env->intern(env, "cdr"), 1, args);
+
+        lua_createtable(L, 3, 0); // table_stack_index = -1
+
+        lua_pushstring(L, "cons"); // table_stack_index = -2
+        lua_setfield(L, -2, "type"); // table_stack_index = -1
+
+        emacs_to_lua_val(env, car, L); // stack_index = -1 , table_stack_index = -2
+        lua_setfield(L, -2, "car"); // table_stack_index = -1
+
+        emacs_to_lua_val(env, cdr, L); // stack_index = -1 , table_stack_index = -2
+        lua_setfield(L, -2, "cdr"); // table_stack_index = -1
+
+        LOG("Return value from emacs is `cons`");
+        return 0;
+    }
     else
     {
         LOG("Unsupported type");
