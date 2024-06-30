@@ -1,12 +1,13 @@
 CFLAGS = -Wall -Wextra -O2 -Werror=implicit-function-declaration
+CEXTRA = -DDEBUG
 
 default: build
 
 .PHONY: build
 build: luamacs.so
 
-luamacs.so:
-	$(CC) -c $(CFLAGS) -fpic src/main.c -o luamacs.o -l:liblua.a
+luamacs.so: src/main.c
+	$(CC) -c $(CFLAGS) -fpic src/main.c -o luamacs.o -l:liblua.a $(CEXTRA)
 	$(CC) -shared luamacs.o -o luamacs.so -l:liblua.a
 	@rm luamacs.o
 

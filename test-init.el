@@ -13,5 +13,4 @@
 
 (let ((state (luamacs-state-init)))
   (luamacs-exec-str state (luamacs-read-file-to-str "rc.lua"))
-  (message test-cons-value))
-
+  (message (car test-cons-value)))

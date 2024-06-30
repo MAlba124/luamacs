@@ -1,17 +1,20 @@
-require("emacs/emacs")
+local em = require("emacs/emacs")
 local ui = require("emacs/ui")
 
-ui.menu_bar_mode(Mode.DISABLE)
-ui.scroll_bar_mode(Mode.DISABLE)
-ui.tool_bar_mode(Mode.DISABLE)
+ui.menu_bar_mode(em.Mode.DISABLE)
+ui.scroll_bar_mode(em.Mode.DISABLE)
+ui.tool_bar_mode(em.Mode.DISABLE)
 
-set(intern("make-backup-files"), nil)
+em.set(em.intern("make-backup-files"), nil)
 
-ui.require_theme(intern("modus-themes"))
-ui.load_theme(intern("modus-operandi"))
-ui.blink_cursor_mode(Mode.DISABLE)
+ui.require_theme(em.intern("modus-themes"))
+ui.load_theme(em.intern("modus-operandi"))
+ui.blink_cursor_mode(em.Mode.DISABLE)
 
-message(cons("Test", "asd")["car"]) -- prints `Test`
+em.message(em.cons("Test", "asd")["car"]) -- prints `Test`
 
-cons_cell = cons("the-car", "the-cdr")
-set(intern("test-cons-value"), cons_cell["car"])
+cons_cell = em.cons("the-car", "the-cdr")
+test_cons_value = em.intern("test-cons-value")
+em.set(test_cons_value, cons_cell)
+
+-- em.set(em.intern("package-archives"), em.cons("gnu", "https://elpa.gnu.org/packages"))

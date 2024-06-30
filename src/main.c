@@ -12,7 +12,11 @@ int plugin_is_GPL_compatible;
 
 // TODO: Make function get_string_length for elisp strings
 
+#ifdef DEBUG
 #define LOG(msg) printf("LUAMACS(%s): "msg"\n", __func__)
+#else
+#define LOG(msg)
+#endif
 #define NIL(env) env->intern(env, "nil")
 #define ELISP_IS_TYPE(env, type, str) env->eq(env, env->intern(env, str), type)
 
@@ -221,7 +225,6 @@ functioncall(lua_State *L)
     for (size_t i = 0; i < nargs; i++)
     {
         lua_rawgeti(L, -1 - i, i + 1);
-        lua_to_emacs_val(env, L, -1);
         evalues[i] = lua_to_emacs_val(env, L, -1);
     }
 
@@ -370,7 +373,6 @@ emacs_module_init(struct emacs_runtime *runtime)
     defun(env, 0, state_init, "Initialize the lua state", "luamacs-state-init");
     defun(env, 1, read_file_to_str, "Read a file to string", "luamacs-read-file-to-str");
     defun(env, 2, execute_lua_str, "Execute a given string containing lua code", "luamacs-exec-str");
-
     LOG("Initialized");
 
     return 0;
