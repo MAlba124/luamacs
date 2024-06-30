@@ -107,7 +107,6 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
 {
     if (!env->is_not_nil(env, eval))
     {
-        LOG("Return value from emacs is `nil`");
         lua_pushnil(L);
         return 0;
     }
@@ -115,7 +114,6 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
     emacs_value type = env->type_of(env, eval);
     if (ELISP_IS_TYPE(env, type, "string"))
     {
-        LOG("Return value from emacs is `string`");
         ptrdiff_t str_len = 0;
         if (!env->copy_string_contents(env, eval, NULL, &str_len))
         {
@@ -141,17 +139,14 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
     }
     else if (ELISP_IS_TYPE(env, type, "integer"))
     {
-        LOG("Return value from emacs is `integer`");
         lua_pushinteger(L, env->extract_integer(env, eval));
     }
     else if (ELISP_IS_TYPE(env, type, "float"))
     {
-        LOG("Return value from emacs is `float`");
         lua_pushnumber(L, env->extract_float(env, eval));
     }
     else if (ELISP_IS_TYPE(env, type, "boolean"))
     {
-        LOG("Return value from emacs is `boolean`");
         // Redundant?
         if (env->eq(env, eval, env->intern(env, "nil")))
         {
@@ -164,7 +159,6 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
     }
     else if (ELISP_IS_TYPE(env, type, "symbol"))
     {
-        LOG("Return value from emacs is `symbol`");
         emacs_value *l_udata = lua_newuserdata(L, sizeof(emacs_value));
         memcpy(l_udata, eval, sizeof(emacs_value));
         return 0;
@@ -186,12 +180,11 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
         emacs_to_lua_val(env, cdr, L); // stack_index = -1 , table_stack_index = -2
         lua_setfield(L, -2, "cdr"); // table_stack_index = -1
 
-        LOG("Return value from emacs is `cons`");
         return 0;
     }
     else
     {
-        LOG("Unsupported type");
+        LOG("Unsupported type returned from emacs");
         return -1;
     }
 
