@@ -54,4 +54,11 @@ function emacs.cons(car, cdr)
    return cell
 end
 
+--- Append a value to a list
+-- @param name Interned symbol of the list to append to
+-- @param value The value to append
+function emacs.add_to_list(list, value)
+   functioncall(emacs_environment, "add-to-list", 2, {list, value})
+end
+
 return emacs

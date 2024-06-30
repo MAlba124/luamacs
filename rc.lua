@@ -17,4 +17,4 @@ cons_cell = em.cons("the-car", "the-cdr")
 test_cons_value = em.intern("test-cons-value")
 em.set(test_cons_value, cons_cell)
 
--- em.set(em.intern("package-archives"), em.cons("gnu", "https://elpa.gnu.org/packages"))
+-- em.add_to_list(em.intern("package-archives"), em.cons("gnu", "https://elpa.gnu.org/packages"))
