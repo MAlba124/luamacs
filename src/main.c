@@ -10,8 +10,6 @@
 
 int plugin_is_GPL_compatible;
 
-// TODO: Make function get_string_length for elisp strings
-
 #ifdef DEBUG
 #define LOG(msg) printf("LUAMACS(%s): "msg"\n", __func__)
 #else
@@ -101,6 +99,18 @@ lua_to_emacs_val(emacs_env *env, lua_State *L, size_t stack_index)
     }
 }
 
+ptrdiff_t
+emacs_get_string_length(emacs_env *env, emacs_value eval)
+{
+    ptrdiff_t str_len = 0;
+    if (!env->copy_string_contents(env, eval, NULL, &str_len)) {
+        return -1;
+    }
+
+    return str_len;
+}
+
+
 // Convert a emacs lisp value to lua and push it onto the stack
 int
 emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
@@ -114,9 +124,8 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
     emacs_value type = env->type_of(env, eval);
     if (ELISP_IS_TYPE(env, type, "string"))
     {
-        ptrdiff_t str_len = 0;
-        if (!env->copy_string_contents(env, eval, NULL, &str_len))
-        {
+        ptrdiff_t str_len;
+        if ((str_len = emacs_get_string_length(env, eval)) < 0) {
             LOG("Failed to get string length");
             return -1;
         }
@@ -243,9 +252,8 @@ execute_lua_str(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
 
     lua_State *L = env->get_user_ptr(env, args[0]);
 
-    ptrdiff_t code_len = 0;
-    if (!env->copy_string_contents(env, args[1], NULL, &code_len))
-    {
+    ptrdiff_t code_len;
+    if ((code_len = emacs_get_string_length(env, args[1])) < 0) {
         LOG("Failed to get code len");
         return NIL(env);
     }
