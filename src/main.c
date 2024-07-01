@@ -207,7 +207,6 @@ functioncall(lua_State *L)
 {
     emacs_env *env = lua_touserdata(L, -4);
     const char *func_name = lua_tostring(L, -3);
-    printf("LUAMACS: func name: %s\n", func_name);
     size_t nargs = (size_t)lua_tonumber(L, -2);
 
     if (nargs == 0)
