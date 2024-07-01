@@ -282,73 +282,6 @@ execute_lua_str(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
     return NIL(env);
 }
 
-static emacs_value
-read_file_to_str(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
-{
-    (void)data;
-
-    if (nargs < 1)
-    {
-        LOG("Missing arguments");
-        return NIL(env);
-    }
-
-    ptrdiff_t buf_len = 0;
-    if (!env->copy_string_contents(env, args[0], NULL, &buf_len))
-    {
-        LOG("Failed to get path length");
-        return NIL(env);
-    }
-
-    char *buf = malloc(buf_len);
-    if (!buf)
-    {
-        LOG("Failed to allocate path buf");
-        return NIL(env);
-    }
-
-    if (!env->copy_string_contents(env, args[0], buf, &buf_len))
-    {
-        LOG("Failed to get path");
-        return NIL(env);
-    }
-
-    FILE *f = fopen(buf, "r");
-    if (!f)
-    {
-        perror("LUAMACS: fopen");
-        return NIL(env);
-    }
-
-    free(buf);
-
-    fseek(f, 0, SEEK_END);
-    long f_len = ftell(f);
-    rewind(f);
-
-    char *str_buf = malloc(f_len + 1);
-    if (!str_buf)
-    {
-        LOG("Failed to allocate str_buf");
-        return NIL(env);
-    }
-
-    if (fread(str_buf, 1, f_len, f)!= (size_t)f_len)
-    {
-        LOG("Failed to read from file");
-        return NIL(env);
-    }
-    str_buf[f_len] = '\0';
-
-    fclose(f);
-
-    emacs_value read_str = env->make_string(env, str_buf, f_len);
-
-    free(str_buf);
-
-    return read_str;
-}
-
 void
 defun(emacs_env *env, int mm_arity, emacs_function func, const char *docstring, const char *symbol_name)
 {
@@ -364,7 +297,6 @@ emacs_module_init(struct emacs_runtime *runtime)
     emacs_env *env = runtime->get_environment(runtime);
 
     defun(env, 0, state_init, "Initialize the lua state", "luamacs-state-init");
-    defun(env, 1, read_file_to_str, "Read a file to string", "luamacs-read-file-to-str");
     defun(env, 2, execute_lua_str, "Execute a given string containing lua code", "luamacs-exec-str");
     LOG("Initialized");
 

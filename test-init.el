@@ -1,5 +1,5 @@
 (module-load"./luamacs.so")
 
 (let ((state (luamacs-state-init)))
-  (luamacs-exec-str state (luamacs-read-file-to-str "rc.lua"))
+  (luamacs-exec-str state (with-temp-buffer (insert-file-contents "rc.lua") (buffer-string)))
   (message (car test-cons-value)))
