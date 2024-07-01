@@ -56,4 +56,18 @@ function emacs.require(feature)
    functioncall(emacs_environment, "require", 1, {feature})
 end
 
+--- Execute a file of lisp code
+-- @param file Name of file to load
+-- @return Returns true if the file exists and loads successfully
+function emacs.load(file)
+   return functioncall(emacs_environment, "load", 1, {file})
+end
+
+--- Evaluate elisp code
+-- @param form Elisp code to evaluate
+-- @return The return value of the evaluated code
+function emacs.eval(form)
+   return functioncall(emacs_environment, "eval", 1, {form})
+end
+
 return emacs

@@ -13,6 +13,10 @@ function pakage.init()
    package_initialize()
 end
 
+function pakage.enable_native_compilation()
+   em.set(em.intern("package-native-compile"), true)
+end
+
 function pakage.add_pkg_archive(archive)
    em.add_to_list(em.intern("package-archives"), em.cons(archive["name"], archive["url"]))
 end
