@@ -18,17 +18,6 @@ function emacs.message(msg)
    functioncall(emacs_environment, "message", 1, {msg})
 end
 
---- Check if a package is installed or not
--- @param pkg Symbol representing a package
--- @return True if the package is installed, false otherwise
-function emacs.package_installed_p(pkg)
-   if (functioncall(emacs_environment, "package-installed-p", 1, {pkg}) == nil) then
-      return false
-   else
-      return true
-   end
-end
-
 --- Get the time emacs took to initialize
 -- @return String displayig timestamp, i.e. "1.12 seconds"
 function emacs.emacs_init_time()
@@ -59,6 +48,12 @@ end
 -- @param value The value to append
 function emacs.add_to_list(list, value)
    functioncall(emacs_environment, "add-to-list", 2, {list, value})
+end
+
+--- Load a feature
+-- @param feature The feature to load
+function emacs.require(feature)
+   functioncall(emacs_environment, "require", 1, {feature})
 end
 
 return emacs

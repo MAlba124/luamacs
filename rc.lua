@@ -1,5 +1,9 @@
 local em = require("emacs/emacs")
 local ui = require("emacs/ui")
+local pakage = require("emacs/pakage")
+
+pakage.add_pkg_archive({ name = "melpa", url = "https://melpa.org/packages"})
+pakage.init()
 
 ui.menu_bar_mode(em.Mode.DISABLE)
 ui.scroll_bar_mode(em.Mode.DISABLE)
@@ -17,4 +21,11 @@ cons_cell = em.cons("the-car", "the-cdr")
 test_cons_value = em.intern("test-cons-value")
 em.set(test_cons_value, cons_cell)
 
--- em.add_to_list(em.intern("package-archives"), em.cons("gnu", "https://elpa.gnu.org/packages"))
+local pkg_evil = em.intern("evil")
+if not pakage.is_installed(pkg_evil) then
+    pakage.install(em.intern("evil"))
+else
+   em.message("evil is already installed")
+end
+em.require(em.intern("evil"))
+functioncall(emacs_environment, "evil-mode", 1, {1})
