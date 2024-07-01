@@ -17,7 +17,7 @@ check:
 
 .PHONY: test
 test: build
-	./test_emacs.sh
+	./scripts/test_emacs.sh
 
 .PHONY: doc
 doc:
