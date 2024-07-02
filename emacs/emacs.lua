@@ -50,6 +50,14 @@ function emacs.add_to_list(list, value)
    functioncall(emacs_environment, "add-to-list", 2, {list, value})
 end
 
+--- Add a value to a list without triggering return value conversion
+-- Use this when appending to large lists like `auto-mode-alist` to prevent segfaults
+-- @param name Interned symbol of the list to append to
+-- @param value The value to append
+function emacs.add_to_list_no_ret(list, value)
+   functioncall_no_return(emacs_environment, "add-to-list", 2, {list, value})
+end
+
 --- Load a feature
 -- @param feature The feature to load
 function emacs.require(feature)
