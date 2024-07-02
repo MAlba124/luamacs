@@ -237,6 +237,40 @@ functioncall(lua_State *L)
     return 1;
 }
 
+int
+functioncall_no_return(lua_State *L)
+{
+    emacs_env *env = lua_touserdata(L, -4);
+    const char *func_name = lua_tostring(L, -3);
+    size_t nargs = (size_t)lua_tonumber(L, -2);
+
+    if (nargs == 0)
+    {
+        env->funcall(env, env->intern(env, func_name), 0, NULL);
+        return 0;
+    }
+
+    emacs_value *evalues = malloc(sizeof(emacs_value) * nargs);
+    if (!evalues)
+    {
+        LOG("Failed to allocate evalues");
+        return 0;
+    }
+
+    for (size_t i = 0; i < nargs; i++)
+    {
+        lua_rawgeti(L, -1 - i, i + 1);
+        evalues[i] = lua_to_emacs_val(env, L, -1);
+    }
+
+    env->funcall(env, env->intern(env, func_name), nargs, evalues);
+    free(evalues);
+
+    return 0;
+}
+
+
+
 static emacs_value
 execute_lua_str(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
 {
@@ -278,9 +312,12 @@ execute_lua_str(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
     lua_pushcfunction(L, functioncall);
     lua_setglobal(L, "functioncall");
 
+    lua_pushcfunction(L, functioncall_no_return);
+    lua_setglobal(L, "functioncall_no_return");
+
     if (luaL_dostring(L, lua_code))
     {
-        LOG("Error occured running lua code");
+        printf("LUAMACS(execute_lua_str) Error occured running lua code: %s\n", lua_tostring(L, -1));
         return NIL(env);
     }
 
