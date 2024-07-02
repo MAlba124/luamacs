@@ -40,4 +40,10 @@ function pakage.install(pkg)
    functioncall(emacs_environment, "package-install", 1, {pkg})
 end
 
+function pakage.install_if_not_installed(pkg)
+   if not pakage.is_installed(pkg) then
+      pakage.install(pkg)
+   end
+end
+
 return pakage
