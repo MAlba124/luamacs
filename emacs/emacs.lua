@@ -70,4 +70,8 @@ function emacs.eval(form)
    return functioncall(emacs_environment, "eval", 1, {form})
 end
 
+function emacs.add_hook(hook, func)
+   functioncall(emacs_environment, "add-hook", 2, {hook, func})
+end
+
 return emacs
