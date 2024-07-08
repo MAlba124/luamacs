@@ -18,27 +18,6 @@ int plugin_is_GPL_compatible;
 #define NIL(env) env->intern(env, "nil")
 #define ELISP_IS_TYPE(env, type, str) env->eq(env, env->intern(env, str), type)
 
-static void
-lua_state_deinit(void *arg)
-{
-    lua_State *L = (lua_State*)arg;
-    lua_close(L);
-    LOG("Deinitialized lua state");
-}
-
-static emacs_value
-state_init(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
-{
-    (void)nargs;
-    (void)args;
-    (void)data;
-
-    lua_State *L = luaL_newstate();
-    luaL_openlibs(L);
-    LOG("Lua state initialized");
-    return env->make_user_ptr(env, lua_state_deinit, L);
-}
-
 emacs_value
 lua_to_emacs_val(emacs_env *env, lua_State *L, size_t stack_index)
 {
@@ -95,21 +74,20 @@ lua_to_emacs_val(emacs_env *env, lua_State *L, size_t stack_index)
       LOG("Unknown type");
       return NIL(env);
     }
-    }
+  }
 }
 
 static ptrdiff_t
 emacs_get_string_length(emacs_env *env, emacs_value eval)
 {
-    ptrdiff_t str_len = 0;
-    if (!env->copy_string_contents(env, eval, NULL, &str_len))
-      {
-        return -1;
-      }
+  ptrdiff_t str_len = 0;
+  if (!env->copy_string_contents(env, eval, NULL, &str_len))
+    {
+      return -1;
+    }
 
-    return str_len;
+  return str_len;
 }
-
 
 // Convert a emacs lisp value to lua and push it onto the stack
 static int
@@ -128,7 +106,7 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
       if ((str_len = emacs_get_string_length(env, eval)) < 0)
         {
           LOG("Failed to get string length");
-            return -1;
+          return -1;
         }
 
       char *str = malloc(str_len);
@@ -145,7 +123,7 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
         }
 
       lua_pushstring(L, str);
-        free(str);
+      free(str);
     }
   else if (ELISP_IS_TYPE(env, type, "integer"))
     {
@@ -198,7 +176,7 @@ emacs_to_lua_val(emacs_env *env, emacs_value eval, lua_State *L)
       return -1;
     }
 
-    return 0;
+  return 0;
 }
 
 // Lua function
@@ -214,69 +192,95 @@ functioncall(lua_State *L)
     {
       emacs_value ret = env->funcall(env, env->intern(env, func_name), 0, NULL);
       if (emacs_to_lua_val(env, ret, L) < 0)
-          {
-            return 0;
-          }
-        return 1;
-      }
+        {
+          return 0;
+        }
+      return 1;
+    }
 
-    emacs_value *evalues = malloc(sizeof(emacs_value) * nargs);
-    if (!evalues)
-      {
-        LOG("Failed to allocate evalues");
-        return 0;
-      }
+  emacs_value *evalues = malloc(sizeof(emacs_value) * nargs);
+  if (!evalues)
+    {
+      LOG("Failed to allocate evalues");
+      return 0;
+    }
 
-    for (size_t i = 0; i < nargs; i++)
-      {
-        lua_rawgeti(L, -1 - i, i + 1);
-        evalues[i] = lua_to_emacs_val(env, L, -1);
-      }
+  for (size_t i = 0; i < nargs; i++)
+    {
+      lua_rawgeti(L, -1 - i, i + 1);
+      evalues[i] = lua_to_emacs_val(env, L, -1);
+    }
 
-    emacs_value ret = env->funcall(env, env->intern(env, func_name), nargs, evalues);
-    if (emacs_to_lua_val(env, ret, L) < 0)
-      {
-        free(evalues);
-        return 0;
-      }
+  emacs_value ret = env->funcall(env, env->intern(env, func_name), nargs, evalues);
+  if (emacs_to_lua_val(env, ret, L) < 0)
+    {
+      free(evalues);
+      return 0;
+    }
 
-    free(evalues);
-    return 1;
+  free(evalues);
+  return 1;
 }
 
 static int
 functioncall_no_return(lua_State *L)
 {
-    emacs_env *env = lua_touserdata(L, -4);
-    const char *func_name = lua_tostring(L, -3);
-    size_t nargs = (size_t)lua_tonumber(L, -2);
+  emacs_env *env = lua_touserdata(L, -4);
+  const char *func_name = lua_tostring(L, -3);
+  size_t nargs = (size_t)lua_tonumber(L, -2);
 
-    if (nargs == 0)
-      {
-        env->funcall(env, env->intern(env, func_name), 0, NULL);
-        return 0;
-      }
+  if (nargs == 0)
+    {
+      env->funcall(env, env->intern(env, func_name), 0, NULL);
+      return 0;
+    }
 
-    emacs_value *evalues = malloc(sizeof(emacs_value) * nargs);
-    if (!evalues)
-      {
-        LOG("Failed to allocate evalues");
-        return 0;
-      }
+  emacs_value *evalues = malloc(sizeof(emacs_value) * nargs);
+  if (!evalues)
+    {
+      LOG("Failed to allocate evalues");
+      return 0;
+    }
 
-    for (size_t i = 0; i < nargs; i++)
-      {
-        lua_rawgeti(L, -1 - i, i + 1);
-        evalues[i] = lua_to_emacs_val(env, L, -1);
-      }
+  for (size_t i = 0; i < nargs; i++)
+    {
+      lua_rawgeti(L, -1 - i, i + 1);
+      evalues[i] = lua_to_emacs_val(env, L, -1);
+    }
 
-    env->funcall(env, env->intern(env, func_name), nargs, evalues);
-    free(evalues);
+  env->funcall(env, env->intern(env, func_name), nargs, evalues);
+  free(evalues);
 
-    return 0;
+  return 0;
 }
 
+static void
+lua_state_deinit(void *arg)
+{
+  lua_State *L = (lua_State*)arg;
+  lua_close(L);
+  LOG("Deinitialized lua state");
+}
 
+static emacs_value
+state_init(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
+{
+  (void)nargs;
+  (void)args;
+  (void)data;
+
+  lua_State *L = luaL_newstate();
+  luaL_openlibs(L);
+  LOG("Lua state initialized");
+
+  lua_pushcfunction(L, functioncall);
+  lua_setglobal(L, "functioncall");
+
+  lua_pushcfunction(L, functioncall_no_return);
+  lua_setglobal(L, "functioncall_no_return");
+
+  return env->make_user_ptr(env, lua_state_deinit, L);
+}
 
 static emacs_value
 execute_lua_str(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
@@ -289,8 +293,6 @@ execute_lua_str(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
         LOG("Missing arguments");
         return NIL(env);
     }
-
-    lua_State *L = env->get_user_ptr(env, args[0]);
 
     ptrdiff_t code_len;
     if ((code_len = emacs_get_string_length(env, args[1])) < 0) {
@@ -311,16 +313,12 @@ execute_lua_str(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
         return NIL(env);
       }
 
+    lua_State *L = env->get_user_ptr(env, args[0]);
+
     // Expose the emacs environment for use in Lua
     lua_pushlightuserdata(L, env);
     lua_setglobal(L, "emacs_environment");
     lua_pop(L, -1);
-
-    lua_pushcfunction(L, functioncall);
-    lua_setglobal(L, "functioncall");
-
-    lua_pushcfunction(L, functioncall_no_return);
-    lua_setglobal(L, "functioncall_no_return");
 
     if (luaL_dostring(L, lua_code))
       {
