@@ -18,6 +18,13 @@ int plugin_is_GPL_compatible;
 #define NIL(env) env->intern(env, "nil")
 #define ELISP_IS_TYPE(env, type, str) env->eq(env, env->intern(env, str), type)
 
+typedef struct {
+  int reg_index;
+  int nargs;
+  int returns;
+  lua_State *L; // TODO: use after free vulnerability?
+} LuaFunctionData;
+
 emacs_value
 lua_to_emacs_val(emacs_env *env, lua_State *L, size_t stack_index)
 {
@@ -254,6 +261,66 @@ functioncall_no_return(lua_State *L)
   return 0;
 }
 
+static emacs_value
+lua_function_proxy(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
+{
+  LuaFunctionData *dat = data;
+  if (dat->nargs != nargs)
+    {
+      return NIL(env);
+    }
+
+  lua_rawgeti(dat->L, LUA_REGISTRYINDEX, dat->reg_index);
+
+  for (int i = 0; i < dat->nargs; i++)
+    {
+      emacs_to_lua_val(env, args[i], dat->L);
+    }
+  // for arg in args push arg to lua stack
+
+  lua_call(dat->L, dat->nargs, dat->returns);
+
+  if (dat->returns)
+    {
+      return lua_to_emacs_val(env, dat->L, -1);
+    }
+
+  return NIL(env);
+}
+
+static int
+expose_function(lua_State *L)
+{
+  emacs_env *env = lua_touserdata(L, -6);
+  const char *lisp_fname = lua_tostring(L, -5);
+  const char *docstring = lua_tostring(L, -4);
+  int nargs = lua_tointeger(L, -3);
+  int returns = lua_toboolean(L, -2);
+  int function_reg_index = luaL_ref(L, LUA_REGISTRYINDEX);
+
+  // TODO: It leaks:
+  LuaFunctionData *data = malloc(sizeof(LuaFunctionData));
+  data->reg_index = function_reg_index;
+  data->nargs = nargs;
+  data->returns = returns;
+  data->L = L;
+
+  emacs_value efunc =
+    env->make_function(
+                       env,
+                       nargs,
+                       nargs,
+                       lua_function_proxy,
+                       docstring,
+                       data
+                       );
+  emacs_value symbol = env->intern(env, lisp_fname);
+  emacs_value args[] = {symbol, efunc};
+  env->funcall(env, env->intern(env, "defalias"), 2, args);
+
+  return 0;
+}
+
 static void
 lua_state_deinit(void *arg)
 {
@@ -278,6 +345,9 @@ state_init(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data)
 
   lua_pushcfunction(L, functioncall_no_return);
   lua_setglobal(L, "functioncall_no_return");
+
+  lua_pushcfunction(L, expose_function);
+  lua_setglobal(L, "expose_function");
 
   return env->make_user_ptr(env, lua_state_deinit, L);
 }

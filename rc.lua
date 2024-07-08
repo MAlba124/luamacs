@@ -29,3 +29,16 @@ else
 end
 em.require(em.intern("evil"))
 functioncall(emacs_environment, "evil-mode", 1, {1})
+
+function luamacs_test()
+   print("It is working!")
+end
+
+expose_function(
+   emacs_environment, -- env     : -6
+   "luamacs-test", -- lisp name  : -5
+   "docstring", -- docstring     : -4
+   0, -- takes n args            : -3
+   false, -- returns             : -2
+   luamacs_test -- function      : -1
+)
