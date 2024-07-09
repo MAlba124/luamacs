@@ -32,6 +32,7 @@ functioncall(emacs_environment, "evil-mode", 1, {1})
 
 function luamacs_test()
    print("It is working!")
+   em.message("Msg")
 end
 
 expose_function(

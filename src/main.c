@@ -270,6 +270,10 @@ lua_function_proxy(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *dat
       return NIL(env);
     }
 
+  lua_pushlightuserdata(dat->L, env);
+  lua_setglobal(dat->L, "emacs_environment");
+  lua_pop(dat-> L, -1);
+
   lua_rawgeti(dat->L, LUA_REGISTRYINDEX, dat->reg_index);
 
   for (int i = 0; i < dat->nargs; i++)
