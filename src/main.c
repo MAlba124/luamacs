@@ -276,7 +276,6 @@ lua_function_proxy(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *dat
     {
       emacs_to_lua_val(env, args[i], dat->L);
     }
-  // for arg in args push arg to lua stack
 
   lua_call(dat->L, dat->nargs, dat->returns);
 
@@ -326,6 +325,7 @@ lua_state_deinit(void *arg)
 {
   lua_State *L = (lua_State*)arg;
   lua_close(L);
+  L = NULL;
   LOG("Deinitialized lua state");
 }
 

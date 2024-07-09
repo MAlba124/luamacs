@@ -78,8 +78,12 @@ function emacs.eval(form)
    return functioncall(emacs_environment, "eval", 1, {form})
 end
 
-function emacs.add_hook(hook, func)
-   functioncall(emacs_environment, "add-hook", 2, {hook, func})
+function emacs.add_hook(hook, func, local)
+   if not local then
+      functioncall(emacs_environment, "add-hook", 2, {hook, func})
+   else
+      functioncall(emacs_environment, "add-hook", 4, {hook, func, 0, true})
+   end
 end
 
 return emacs
