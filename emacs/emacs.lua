@@ -98,4 +98,12 @@ function emacs.make_local_variable(symbol)
    return functioncall(emacs_environment, "make-local-variable", 1, {symbol})
 end
 
+function emacs.kbd(keys)
+   return functioncall(emacs_environment, "kbd", 1, {keys})
+end
+
+function emacs.define_key(keymap, key, def)
+   functioncall_no_return(emacs_environment, "define-key", 3, {keymap, key, def})
+end
+
 return emacs
