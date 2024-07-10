@@ -12,10 +12,18 @@ function emacs.set(name, value)
    return functioncall(emacs_environment, "set", 2, {name, value})
 end
 
+--- Set a symbols default value
+-- @param name Symbol to set the value for
+-- @param value Value to set
+-- @return value
+function emacs.set_default(name, value)
+   return functioncall(emacs_environment, "set-default", 2, {name, value})
+end
+
 --- Display a message inside emacs
 -- @param msg The message to be displayed
 function emacs.message(msg)
-   functioncall(emacs_environment, "message", 1, {msg})
+   functioncall_no_return(emacs_environment, "message", 1, {msg})
 end
 
 --- Get the time emacs took to initialize
@@ -61,7 +69,7 @@ end
 --- Load a feature
 -- @param feature The feature to load
 function emacs.require(feature)
-   functioncall(emacs_environment, "require", 1, {feature})
+   functioncall_no_return(emacs_environment, "require", 1, {feature})
 end
 
 --- Execute a file of lisp code
@@ -80,10 +88,14 @@ end
 
 function emacs.add_hook(hook, func, lm_local)
    if not lm_local then
-      functioncall(emacs_environment, "add-hook", 2, {hook, func})
+      functioncall_no_return(emacs_environment, "add-hook", 2, {hook, func})
    else
-      functioncall(emacs_environment, "add-hook", 4, {hook, func, 0, true})
+      functioncall_no_return(emacs_environment, "add-hook", 4, {hook, func, nil, true})
    end
+end
+
+function emacs.make_local_variable(symbol)
+   return functioncall(emacs_environment, "make-local-variable", 1, {symbol})
 end
 
 return emacs
